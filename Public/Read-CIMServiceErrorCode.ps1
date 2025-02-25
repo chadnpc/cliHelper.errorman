@@ -1,4 +1,4 @@
-function Read-CIMServiceCode {
+function Read-CIMServiceErrorCode {
   [CmdletBinding()][OutputType([string])]
   param (
     [int]$Code

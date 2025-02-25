@@ -1,4 +1,4 @@
-function Read-WbemError {
+function Read-WbemErrorCode {
   [CmdletBinding()][OutputType([string])]
   param (
     [WbemErrorCode]$ErrorCode
