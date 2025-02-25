@@ -31,10 +31,6 @@ class ErrorMetadata {
   }
 }
 
-class ErrorDictionary : System.Collections.Generic.Dictionary[ErrorMetadata, System.Management.Automation.ErrorRecord[]] {
-  ErrorDictionary() {}
-  [void] Add([System.Management.Automation.ErrorRecord[]]$value) { $this.Add(@{}, $value) }
-}
 class ExceptionType {
   [string]$Name
   [string]$BaseType
@@ -55,9 +51,9 @@ class ExceptionType {
 }
 
 class ErrorManager {
-  [ExceptionType[]]$ExceptionTypes = [ErrorManager]::Get_ExceptionTypes()
+  static [ExceptionType[]] $ExceptionTypes = [ErrorManager]::Get_ExceptionTypes()
   # A Hashstable of common used exceptions and their descriptions:
-  static [hashtable] $CommonExceptions = [Hashtable]@{
+  static hidden [hashtable] $CommonExceptions = [Hashtable]@{
     'System.ArgumentOutOfRangeException'                                              = 'The Value Of An Argument Is Outside The Allowable Range Of Values As Defined By The Invoked Method.'
     'System.Diagnostics.Tracing.EventSourceException'                                 = 'The Error Occurs During Event Tracing For Windows (ETW).'
     'System.ServiceModel.MsmqException'                                               = 'Encapsulates Errors Returned By Message Queuing (MSMQ). This Exception Is Thrown By The Message Queuing Transport And The Message Queuing Integration Channel.'
@@ -309,28 +305,30 @@ class ErrorManager {
     'System.Drawing.Printing.InvalidPrinterException'                                 = 'You Try To Access A Printer Using Printer Settings That Are Not Valid.'
     'System.ServiceModel.QuotaExceededException'                                      = 'A Message Quota Has Been Exceeded.'
   }
-  static ErrorManager() {}
+  ErrorManager() {}
   static [ExceptionType[]] Get_ExceptionTypes() {
-    $_types = @(); [appdomain]::currentdomain.GetAssemblies().gettypes() | Where-Object { $_.Name -like "*Exception" -and $null -ne $_.BaseType } | ForEach-Object {
-      [string]$FullName = $_.FullName
-      $RuntimeType = $($FullName -as [type])
-      $_types += [ExceptionType][hashtable]@{
-        Name        = $_.Name
-        BaseType    = $_.BaseType
-        TypeName    = $FullName
-        Description = $CommonExceptions."$FullName"
-        Assembly    = $_.Assembly
-        IsLoaded    = [bool]$RuntimeType
-        IsPublic    = $RuntimeType.IsPublic
+    $_types = @(); [appdomain]::currentdomain.GetAssemblies().gettypes().Where({ $_.Name -like "*Exception" -and $null -ne $_.BaseType }).ForEach({
+        [string]$FullName = $_.FullName
+        $RuntimeType = $($FullName -as [type])
+        $_types += [ExceptionType][hashtable]@{
+          Name        = $_.Name
+          BaseType    = $_.BaseType
+          TypeName    = $FullName
+          Description = [ErrorManager]::CommonExceptions["$FullName"]
+          Assembly    = $_.Assembly
+          IsLoaded    = [bool]$RuntimeType
+          IsPublic    = $RuntimeType.IsPublic
+        }
       }
-    }
-    return $($_types | Where-Object { $null -ne $_.IsPublic -and !$_.TypeName.Contains('<') -and !$_.TypeName.Contains('+') -and !$_.TypeName.Contains('>') })
+    )
+    return $_types.Where({ $null -ne $_.IsPublic -and !$_.TypeName.Contains('<') -and !$_.TypeName.Contains('+') -and !$_.TypeName.Contains('>') })
   }
 }
 #endregion Classes
+
 # Types that will be available to users when they import the module.
 $typestoExport = @(
-  [ErrorMetadata], [ErrorDictionary], [ExceptionType], [ErrorManager]
+  [ErrorMetadata], [ExceptionType], [ErrorManager]
 )
 $TypeAcceleratorsClass = [PsObject].Assembly.GetType('System.Management.Automation.TypeAccelerators')
 foreach ($Type in $typestoExport) {
