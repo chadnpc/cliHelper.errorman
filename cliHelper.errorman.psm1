@@ -51,9 +51,8 @@ class ExceptionType {
 }
 
 class ErrorManager {
-  static [ExceptionType[]] $ExceptionTypes = [ErrorManager]::Get_ExceptionTypes()
   # A Hashstable of common used exceptions and their descriptions:
-  static hidden [hashtable] $CommonExceptions = [Hashtable]@{
+  static [hashtable] $CommonExceptions = [Hashtable]@{
     'System.ArgumentOutOfRangeException'                                              = 'The Value Of An Argument Is Outside The Allowable Range Of Values As Defined By The Invoked Method.'
     'System.Diagnostics.Tracing.EventSourceException'                                 = 'The Error Occurs During Event Tracing For Windows (ETW).'
     'System.ServiceModel.MsmqException'                                               = 'Encapsulates Errors Returned By Message Queuing (MSMQ). This Exception Is Thrown By The Message Queuing Transport And The Message Queuing Integration Channel.'
@@ -307,10 +306,11 @@ class ErrorManager {
   }
   ErrorManager() {}
   static [ExceptionType[]] Get_ExceptionTypes() {
-    $_types = @(); [appdomain]::currentdomain.GetAssemblies().gettypes().Where({ $_.Name -like "*Exception" -and $null -ne $_.BaseType }).ForEach({
+    $all = @()
+    [appdomain]::currentdomain.GetAssemblies().GetTypes().Where({ $_.Name -like "*Exception" -and $null -ne $_.BaseType }).ForEach({
         [string]$FullName = $_.FullName
         $RuntimeType = $($FullName -as [type])
-        $_types += [ExceptionType][hashtable]@{
+        $all += [ExceptionType][hashtable]@{
           Name        = $_.Name
           BaseType    = $_.BaseType
           TypeName    = $FullName
@@ -321,7 +321,7 @@ class ErrorManager {
         }
       }
     )
-    return $_types.Where({ $null -ne $_.IsPublic -and !$_.TypeName.Contains('<') -and !$_.TypeName.Contains('+') -and !$_.TypeName.Contains('>') })
+    return $all.Where({ $null -ne $_.IsPublic -and !$_.TypeName.Contains('<') -and !$_.TypeName.Contains('+') -and !$_.TypeName.Contains('>') })
   }
 }
 #endregion Classes

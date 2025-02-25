@@ -1,7 +1,7 @@
 ﻿
 #!/usr/bin/env pwsh
 # .SYNOPSIS
-#   cliHelper.errorman buildScript v0.1.1
+#   cliHelper.errorman buildScript v0.1.2
 # .DESCRIPTION
 #   A custom build script for the module cliHelper.errorman
 # .LINK
