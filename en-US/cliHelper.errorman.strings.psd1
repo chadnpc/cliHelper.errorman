@@ -1,10 +1,10 @@
 ﻿
 @{
   ModuleName    = 'cliHelper.errorman'
-  ModuleVersion = [version]'0.1.2'
+  ModuleVersion = [version]'0.1.3'
   ReleaseNotes  = '# Release Notes
 
-- Version_0.1.2
+- Version_0.1.3
 - Functions ...
 - Optimizations
 '
