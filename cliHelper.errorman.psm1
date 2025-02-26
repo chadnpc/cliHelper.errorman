@@ -1,18 +1,27 @@
 ﻿#!/usr/bin/env pwsh
+using namespace System.Management.Automation
+
 #Requires -Modules devconstants
 
 #region    Classes
+enum ErrorSeverity {
+  Warning = 0
+  Error = 1
+  Critical = 2
+  Fatal = 3
+}
+
 class ErrorMetadata {
-  [bool]$IsPrinted = $false
-  [datetime]$Timestamp
-  [string]$ErrorMessage
-  [string]$StackTrace
-  [string]$ErrorCode
-  [string]$Severity
-  [string]$User
   [string]$Module
   [string]$Function
+  [string]$ErrorCode
+  [string]$StackTrace
+  [string]$ErrorMessage
   [string]$AdditionalInfo
+  [ErrorSeverity]$Severity
+  [string]$User = $env:USER
+  hidden [bool]$IsPrinted = $false
+  [datetime]$Timestamp = [DateTime]::Now
 
   ErrorMetadata() {}
   ErrorMetadata([hashtable]$obj) {
@@ -28,6 +37,16 @@ class ErrorMetadata {
     $this.IsPrinted = $IsPrinted
     $this.Timestamp = $Timestamp
     $this.ErrorMessage = $ErrorMessage
+  }
+}
+
+class ErrorLog : PSDataCollection[ErrorRecord] {
+  ErrorLog() : base() {}
+  [void] Export([string]$jsonPath) {
+    $this | ConvertTo-Json -Depth 10 | Out-File -FilePath $jsonPath -Encoding UTF8
+  }
+  [string] ToString() {
+    return ($this.count -ge 0) ? ('@()') : ''
   }
 }
 
@@ -328,7 +347,7 @@ class ErrorManager {
 
 # Types that will be available to users when they import the module.
 $typestoExport = @(
-  [ErrorMetadata], [ExceptionType], [ErrorManager]
+  [ErrorMetadata], [ExceptionType], [ErrorSeverity], [ErrorLog], [ErrorManager]
 )
 $TypeAcceleratorsClass = [PsObject].Assembly.GetType('System.Management.Automation.TypeAccelerators')
 foreach ($Type in $typestoExport) {
@@ -343,7 +362,7 @@ foreach ($Type in $typestoExport) {
       'TypeAcceleratorAlreadyExists',
       [System.Management.Automation.ErrorCategory]::InvalidOperation,
       $Type.FullName
-    ) | Write-Warning
+    ) | Write-Debug
   }
 }
 # Add type accelerators for every exportable type.
